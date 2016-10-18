@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+
+<head>
+<meta charset="utf-8">
+<script src="d3.min.js"></script>
+<title>Line Graph Demo</title>
+</head>
+
+
+<style>
+ 
+#chart {
+	width: 700px;
+	height: 350px;
+	margin: auto;
+}
+ 
+path { /* css styles for the lines on our graph */
+  stroke-width: 2;
+  fill: none;
+}
+ 
+.axis path, /* css styles for the axis */
+.axis line {
+	fill: none;
+	stroke: grey;
+	stroke-width: 1;
+}
+
+.axis text { /* css styles for the axis text */
+  font: 10px Arial;
+  fill: gray;
+}
+ 
+</style>
+
+<body>
+	<div id="chart"></div>
+</body>
+ 
+<script>
+
+// Getting the data: this is where you link your csv file to d3
+d3.csv("data/candidates.csv", function(error, data) {
+
+var parseDate = d3.time.format("%Y-%m-%d").parse; // no need to change anything here
+
+data.forEach(function(d) {
+		d.date = parseDate(d.date); // parsing the "date" column in the dataset
+		d['clinton'] = +d['clinton']; // parsing hillary's column
+		d['trump'] = +d['trump']; // parsing trump's column
+                              // to include more lines into your graph, you will need to parse more columns from your dataset
+});
+
+
+
+// Define chart's dimensions and padding: this is where you change the chart's size (currently set to 600 x 270)
+var padding = {top: 30, right: 30, bottom: 30, left: 30};
+var w = 600 - padding.left - padding.right;
+var h = 270 - padding.top - padding.bottom;
+
+
+
+// setting x-scale based on time: no need to change anything here
+var xScale = d3.time.scale()
+		.domain(d3.extent(data, function(d) { return d.date; }))
+		.range([0, w]);
+
+// setting y-scale
+var yScale = d3.scale.linear()
+		.domain([0, d3.max(data, function(d) { return d['trump']; })]) // you will change 'trump' with one of your columns
+		.range([h, 0]);
+
+
+
+// Drawing area: no need to change anything here
+var svg = d3.select("#chart")
+	         .append("svg")
+		      .attr("width", w + padding.left + padding.right)
+		      .attr("height", h + padding.top + padding.bottom)
+	        .append("g")
+			.attr("transform", "translate(" + padding.left + "," + padding.top + ")");
+
+
+
+// setting up the lines
+var clintonline = d3.svg.line()
+	               .x(function(d) { return xScale(d.date); })
+	               .y(function(d) { return yScale(+d['clinton']); });
+
+var trumpline = d3.svg.line()
+	               .x(function(d) { return xScale(d.date); })
+	               .y(function(d) { return yScale(+d['trump']); });
+
+// to add more lines, you will need to create additional variables (right now there's "clintonline" and "trumpline") to do this, basically follow the template below:
+
+// var _______ = d3.svg.line()        <---  the blank line is the variable name that can be anything
+// .x(function(d) { return xScale(d.date); })
+// .y(function(d) { return yScale(+d['________']); });   <--- the blank line is the column that you're getting the data from
+ 
+
+
+// drawing the lines
+svg.append("path")	
+		.attr("stroke", "blue")
+		.attr("d", clintonline(data));
+
+svg.append("path")	
+		.attr("stroke", "red")
+		.attr("d", trumpline(data));
+
+// to add more lines, you will also need to append additional paths like this:
+// svg.append("path")
+// .attr("stroke", color-of-your-choice)
+// .attr("d", _________(data));      <--- the blank field is the variable name that you created above
+
+
+
+// setting up the x-axis
+var xAxis = d3.svg.axis()
+    .scale(xScale)
+    .orient("bottom")
+    .ticks(5);
+
+// drawing the x-axis
+svg.append("g").call(xAxis)	
+		.attr("class", "x axis")
+		.attr("transform", "translate(0," + h + ")"); // this line is necessary to move line from top of graph to the bottom
+
+// setting up the y-axis
+var yAxis = d3.svg.axis()
+              .scale(yScale)
+	           .orient("left")
+              .ticks(5);
+
+// drawing the y-axis
+svg.append("g").call(yAxis)	
+		.attr("class", "y axis");
+
+
+}); // end of d3 code
+
+
+ 
+</script>
